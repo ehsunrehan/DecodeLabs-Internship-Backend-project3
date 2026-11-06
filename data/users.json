@@ -1,0 +1,32 @@
+[
+  {
+    "id": "usr_72e093d2b823",
+    "name": "Aarav Mehta",
+    "email": "admin@decodelabs.tech",
+    "passwordHash": "$2a$10$zQZEwYTRI0K7MjhyU.2ER.VuqpL2ExuyJ2UNuKI1JFrspCEqXVE4q",
+    "role": "admin",
+    "passwordChangedAt": "2026-11-06T03:41:21.690Z",
+    "lastLoginAt": "2026-11-06T03:45:08.770Z",
+    "createdAt": "2026-11-06T03:41:21.690Z"
+  },
+  {
+    "id": "usr_c0ce6e6a00f1",
+    "name": "Ishita Raghavan",
+    "email": "user@decodelabs.tech",
+    "passwordHash": "$2a$10$FvZSP5b9ulp/c8L07bNlDucFjycYWbbVL5rRmJZ/OOBfU2zTBo3kG",
+    "role": "user",
+    "passwordChangedAt": "2026-11-06T03:41:21.810Z",
+    "lastLoginAt": "2026-11-06T03:42:26.166Z",
+    "createdAt": "2026-11-06T03:41:21.810Z"
+  },
+  {
+    "id": "usr_cbc4dc403319",
+    "name": "Test Person",
+    "email": "test.person@example.com",
+    "passwordHash": "$2a$10$YM6V/4bYaa1J/oyQzJObtOOwXOdLE1VWpYRnPvMHTBJMyYwBXcz8.",
+    "role": "user",
+    "passwordChangedAt": "2026-11-06T03:42:25.603Z",
+    "lastLoginAt": null,
+    "createdAt": "2026-11-06T03:42:25.603Z"
+  }
+]

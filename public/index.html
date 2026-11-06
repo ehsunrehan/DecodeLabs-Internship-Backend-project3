@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project 03 · Secure Authentication System — DecodeLabs</title>
+  <meta name="description" content="DecodeLabs Industrial Training Kit — Project 3: bcrypt password hashing, JSON Web Tokens and protected routes." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+
+  <!-- ───────── top bar ───────── -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="sigil">DL</span>
+      <span class="topbar__title">
+        <b>DecodeLabs</b>
+        <i>Project 03 · Secure Authentication</i>
+      </span>
+    </div>
+
+    <div class="topbar__state">
+      <span class="lamp" id="lamp"></span>
+      <span class="topbar__stateText" id="serverState">probing…</span>
+      <span class="sep"></span>
+      <span class="mono tiny" id="ttlLabel">TTL 30m · HS256</span>
+    </div>
+
+    <div class="topbar__session" id="sessionBar" hidden>
+      <span class="rolechip" id="roleChip">guest</span>
+      <span class="who mono" id="whoAmI">—</span>
+      <button class="btn btn--quiet" id="btnLogout" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <!-- ───────── headline ───────── -->
+  <section class="headline">
+    <p class="headline__kicker">Backend Development · Milestone Three</p>
+    <h1>Perimeter<br /><span>defence</span></h1>
+    <p class="headline__lede">
+      Passwords are salted and hashed before they touch disk. Identity travels as a signed JWT.
+      Every protected route answers <b class="mono">401</b> until the signature checks out.
+    </p>
+    <ul class="spec">
+      <li><span>Hashing</span><b>bcrypt · 10 rounds</b></li>
+      <li><span>Token</span><b>HS256 JWT</b></li>
+      <li><span>Guards</span><b>requireAuth · requireRole</b></li>
+      <li><span>Brute force</span><b>8 tries / 10 min</b></li>
+    </ul>
+  </section>
+
+  <!-- ───────── app ───────── -->
+  <main class="deck">
+
+    <!-- identity -->
+    <section class="panel panel--identity">
+      <div class="panel__head">
+        <h2>Identity</h2>
+        <span class="panel__tag" id="identityTag">signed out</span>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" id="tabLogin" type="button" role="tab">Sign in</button>
+        <button class="tab" id="tabRegister" type="button" role="tab">Create account</button>
+      </div>
+
+      <form class="authform" id="authForm" novalidate>
+        <label class="field" id="fieldName" hidden>
+          <span>Display name</span>
+          <input name="name" type="text" placeholder="Kabir Sethi" autocomplete="name" maxlength="80" />
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" placeholder="user@decodelabs.tech" autocomplete="email" />
+        </label>
+
+        <label class="field">
+          <span>Password</span>
+          <div class="passline">
+            <input name="password" type="password" placeholder="••••••••" autocomplete="current-password" />
+            <button class="peek" id="btnPeek" type="button" aria-label="Show password">show</button>
+          </div>
+        </label>
+
+        <div class="strength" id="strength" hidden>
+          <div class="strength__bar"><i id="strengthFill"></i></div>
+          <div class="strength__row">
+            <span id="strengthWord">too weak</span>
+            <span class="mono" id="strengthScore">0%</span>
+          </div>
+          <ul class="strength__rules" id="strengthRules"></ul>
+        </div>
+
+        <label class="check" id="rememberRow">
+          <input type="checkbox" name="remember" />
+          <span>Keep me signed in for 7 days instead of 30 minutes</span>
+        </label>
+
+        <div class="alert" id="alert" hidden></div>
+
+        <button class="btn btn--ember btn--block" type="submit" id="btnAuth">Sign in</button>
+      </form>
+
+      <div class="demo">
+        <p class="demo__title">Demo accounts — seeded on first boot</p>
+        <button class="demo__row" type="button" data-email="admin@decodelabs.tech" data-pass="Decode@2026">
+          <span class="demo__role demo__role--admin">admin</span>
+          <span class="mono">admin@decodelabs.tech</span>
+          <span class="demo__pass mono">Decode@2026</span>
+        </button>
+        <button class="demo__row" type="button" data-email="user@decodelabs.tech" data-pass="Batch@2026">
+          <span class="demo__role">user</span>
+          <span class="mono">user@decodelabs.tech</span>
+          <span class="demo__pass mono">Batch@2026</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- perimeter -->
+    <section class="panel panel--zone">
+      <div class="panel__head">
+        <h2>Perimeter</h2>
+        <span class="panel__tag" id="zoneTag">no token</span>
+      </div>
+
+      <div class="zonegrid">
+        <!-- token strip -->
+        <div class="tokenbox">
+          <div class="tokenbox__head">
+            <span class="label">Bearer token</span>
+            <div class="tokenbox__acts">
+              <button class="btn btn--tiny" id="btnCopyToken" type="button" disabled>Copy</button>
+              <button class="btn btn--tiny" id="btnClearToken" type="button" disabled>Clear</button>
+            </div>
+          </div>
+
+          <pre class="token" id="tokenOut"><span class="token__empty">No token issued yet.<br />Sign in to open the perimeter.</span></pre>
+
+          <div class="expiry" id="expiryRow" hidden>
+            <div class="expiry__track"><i id="expiryFill"></i></div>
+            <span class="mono" id="expiryText">—</span>
+          </div>
+        </div>
+
+        <!-- claims -->
+        <div class="claims">
+          <div class="tokenbox__head"><span class="label">Decoded payload</span></div>
+          <table class="claims__table" id="claimsTable">
+            <tbody>
+              <tr class="is-empty"><td>—</td><td>claims appear after sign-in</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- protected calls -->
+      <div class="calls">
+        <div class="tokenbox__head">
+          <span class="label">Protected routes</span>
+          <span class="label label--dim">the token travels in Authorization: Bearer</span>
+        </div>
+
+        <div class="callgrid">
+          <button class="call" type="button" data-url="/api/vault/guard">
+            <span class="call__method">GET</span>
+            <span class="call__path mono">/api/vault/guard</span>
+            <span class="call__note">proves the signature</span>
+          </button>
+          <button class="call" type="button" data-url="/api/vault/profile">
+            <span class="call__method">GET</span>
+            <span class="call__path mono">/api/vault/profile</span>
+            <span class="call__note">session + claims</span>
+          </button>
+          <button class="call" type="button" data-url="/api/vault/notes">
+            <span class="call__method">GET</span>
+            <span class="call__path mono">/api/vault/notes</span>
+            <span class="call__note">records behind the wall</span>
+          </button>
+          <button class="call" type="button" data-url="/api/vault/admin">
+            <span class="call__method">GET</span>
+            <span class="call__path mono">/api/vault/admin</span>
+            <span class="call__note">admin only → 403 for users</span>
+          </button>
+          <button class="call call--ghost" type="button" data-url="/api/vault/guard" data-naked="1">
+            <span class="call__method call__method--naked">NO AUTH</span>
+            <span class="call__path mono">/api/vault/guard</span>
+            <span class="call__note">same route, token stripped → 401</span>
+          </button>
+        </div>
+
+        <pre class="response" id="response"><span class="token__empty">Responses print here, exactly as the server sends them.</span></pre>
+      </div>
+
+      <!-- log -->
+      <div class="log">
+        <div class="tokenbox__head">
+          <span class="label">Request log</span>
+          <button class="btn btn--tiny" id="btnClearLog" type="button">Clear</button>
+        </div>
+        <ol class="log__list" id="logList">
+          <li class="log__empty">Nothing called yet.</li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>DecodeLabs · Greater Lucknow, India</span>
+    <span class="mono">POST /api/auth/login · GET /api/vault/guard · www.decodelabs.tech</span>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
